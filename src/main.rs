@@ -1,6 +1,5 @@
 #![no_std]
 #![no_main]
-
 #![feature(panic_info_message)]
 
 use core::arch::global_asm;
@@ -32,7 +31,7 @@ macro_rules! println {
 
 /// Panic handler
 #[panic_handler]
-fn panic(info: &PanicInfo) -> !{
+fn panic(info: &PanicInfo) -> ! {
     print!("Aborting: ");
     if let Some(p) = info.location() {
         println!("{}:{} : {}", p.file(), p.line(), info.message().unwrap());
@@ -40,30 +39,51 @@ fn panic(info: &PanicInfo) -> !{
         println!("no information given")
     }
 
-    loop{}
+    loop {}
 }
 
 #[export_name = "trap"]
 fn trap() {
-    loop{}
+    loop {}
 }
 
 #[no_mangle]
-extern "C"
-fn kmain() {
+extern "C" fn kmain() {
     let mut ricv_uart = uart::Uart::new(0x1000_0000);
-    // We init the uart here, so every call to uart (even on another object) can 
+    // We init the uart here, so every call to uart (even on another object) can
     // do transmit/receive data because the address is global to whole program.
     ricv_uart.init();
 
     println!("Rust on RISCV");
-    println!(r"
+    println!(
+        r"
  ______               __        _______ _______      ______ _______ _______ ______ ___ ___ 
 |   __ \.--.--.-----.|  |_     |       |    |  |    |   __ \_     _|     __|      |   |   |
 |      <|  |  |__ --||   _|    |   -   |       |    |      <_|   |_|__     |   ---|   |   |
 |___|__||_____|_____||____|    |_______|__|____|    |___|__|_______|_______|______|\_____/ 
                                                                                            
-");
+"
+    );
+
+    // Reading input from Uart
+    loop {
+        if let Some(c) = ricv_uart.get() {
+            match c {
+                8 => {
+                    // This is a backspace, so we essentially have
+                    // to write a space and backup again:
+                    print!("{}{}{}", 8 as char, ' ', 8 as char);
+                }
+                10 | 13 => {
+                    // Newline or carriage-return
+                    println!();
+                }
+                _ => {
+                    print!("{}", c as char);
+                }
+            }
+        }
+    }
 }
 
 pub mod uart;
