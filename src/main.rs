@@ -7,6 +7,7 @@ use core::arch::global_asm;
 use core::panic::PanicInfo;
 
 global_asm!(include_str!("asm/boot.S"));
+global_asm!(include_str!("asm/mem.S"));
 
 #[macro_export]
 macro_rules! print {
@@ -65,6 +66,7 @@ extern "C" fn kmain() {
 "
     );
 
+    pages::print_heap_info();
     // Reading input from Uart
     loop {
         if let Some(c) = ricv_uart.get() {
@@ -87,3 +89,5 @@ extern "C" fn kmain() {
 }
 
 pub mod uart;
+pub mod pages;
+pub mod csr;
