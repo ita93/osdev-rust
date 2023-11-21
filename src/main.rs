@@ -91,3 +91,4 @@ extern "C" fn kmain() {
 pub mod uart;
 pub mod pages;
 pub mod csr;
+pub mod mm;
