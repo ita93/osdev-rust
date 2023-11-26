@@ -1,10 +1,20 @@
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 
 use core::arch::global_asm;
 
 use core::panic::PanicInfo;
+
+use alloc::boxed::Box;
+
+
+#[macro_use]
+extern crate bitflags;
+
+#[macro_use]
+extern crate lazy_static;
 
 global_asm!(include_str!("asm/boot.S"));
 global_asm!(include_str!("asm/mem.S"));
@@ -66,7 +76,11 @@ extern "C" fn kmain() {
 "
     );
 
-    pages::print_heap_info();
+    mm::heap_allocator::init_heap();
+
+    // Finished heap allocator (next: virtual memroy)
+    let b = Box::new(5);
+    println!("The box just create is {}", b);
     // Reading input from Uart
     loop {
         if let Some(c) = ricv_uart.get() {
@@ -88,7 +102,8 @@ extern "C" fn kmain() {
     }
 }
 
+pub mod lock;
 pub mod uart;
-pub mod pages;
 pub mod csr;
 pub mod mm;
+extern crate alloc;
